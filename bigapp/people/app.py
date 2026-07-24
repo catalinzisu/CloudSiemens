@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, render_template
 from dataclasses import dataclass, asdict
 from flask_restful import *
 import os
@@ -104,6 +104,10 @@ class PeopleResource(Resource):
 
 api.add_resource(PeopleResource, '/people')
 
+@app.route('/person', methods=['GET', 'POST', 'PUT'])
+def person():
+    if request.method == 'GET':
+        return render_template('person.html')
 
 @app.route('/count')
 def count():
