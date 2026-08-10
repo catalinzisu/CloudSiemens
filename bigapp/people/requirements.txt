@@ -1,0 +1,7 @@
+flask
+flask_restful
+requests
+flask_sqlalchemy
+sqlalchemy
+flask_session
+flask_login

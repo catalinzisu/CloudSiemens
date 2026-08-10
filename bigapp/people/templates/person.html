@@ -1,0 +1,47 @@
+<html>
+<body>
+    <form method="post" action="/people">
+        <input type="text" name="first_name" required id="first_name_id" placeholder="First Name"><br>
+        <input type="text" name="last_name" required id="last_name_id" placeholder="Last Name"><br>
+        <input type="text" name="email" required id="email_id" placeholder="Email"><br>
+        <input type="submit"></input>
+    </form>
+    <hr>
+
+    <table id="people_id" border="1">
+        <thead>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+        </thead>
+        <!-- CORECtat: <tbody> în loc de <body> -->
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        const endpoint = '/people';
+        // CORECTAT: querySelector în loc de getElementById
+        const tableBody = document.querySelector('#people_id tbody');
+
+        // CORECTAT: Am eliminat acoladele { } care înconjurau .then()
+        fetch(endpoint)
+            .then(response => {
+                if (!response.ok) { throw new Error('HTTP error'); }
+                return response.json();
+            })
+            .then(data => {
+                tableBody.innerHTML = '';
+                data.forEach(person => {
+                    tableBody.innerHTML += `
+                    <tr>
+                        <td>${person.first_name}</td>
+                        <td>${person.last_name}</td>
+                        <td>${person.email}</td>
+                    </tr>
+                    `;
+                });
+            });
+    </script>
+</body>
+</html>
