@@ -1,0 +1,2869 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>Person Control Nexus</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030814;
+            --bg-soft: #091321;
+            --panel: rgba(10, 22, 40, 0.58);
+            --panel-strong: rgba(10, 22, 40, 0.84);
+            --text: #edf8ff;
+            --muted: #87a4bb;
+            --line: rgba(141, 203, 255, 0.18);
+            --glow-cyan: #62f2ff;
+            --glow-teal: #00b8a9;
+            --glow-orange: #ff8a3d;
+            --glow-gold: #ffd166;
+            --danger: #ff728a;
+            --success: #7dffbf;
+            --radius-lg: 32px;
+            --radius-md: 22px;
+            --radius-sm: 16px;
+            --shadow-main: 0 24px 90px rgba(0, 0, 0, 0.45);
+            --mouse-x: 50vw;
+            --mouse-y: 50vh;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: auto;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-family: "Space Grotesk", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 20% 0%, rgba(98, 242, 255, 0.08), transparent 32%),
+                radial-gradient(circle at 100% 20%, rgba(255, 138, 61, 0.1), transparent 28%),
+                radial-gradient(circle at 50% 100%, rgba(0, 184, 169, 0.08), transparent 35%),
+                linear-gradient(180deg, #030814 0%, #07111f 45%, #040911 100%);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle 420px at var(--mouse-x) var(--mouse-y), rgba(98, 242, 255, 0.16), transparent 60%),
+                radial-gradient(circle 220px at calc(var(--mouse-x) + 14vw) calc(var(--mouse-y) - 10vh), rgba(255, 138, 61, 0.1), transparent 58%);
+            transition: opacity 240ms ease;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.28;
+            background-image:
+                linear-gradient(rgba(98, 242, 255, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(98, 242, 255, 0.06) 1px, transparent 1px);
+            background-size: 62px 62px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 92%);
+        }
+
+        body.hyper-mode::before {
+            opacity: 1;
+        }
+
+        body.sound-on .sound-bar {
+            animation-play-state: running;
+        }
+
+        ::selection {
+            color: #03101e;
+            background: rgba(98, 242, 255, 0.92);
+        }
+
+        a,
+        button,
+        input {
+            font: inherit;
+            color: inherit;
+        }
+
+        button {
+            border: 0;
+            background: none;
+            cursor: pointer;
+        }
+
+        img,
+        canvas {
+            display: block;
+            max-width: 100%;
+        }
+
+        #particles-layer,
+        #webgl-canvas,
+        .noise-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        #particles-layer {
+            z-index: 2;
+        }
+
+        #webgl-canvas {
+            z-index: 3;
+            opacity: 0.92;
+        }
+
+        .noise-layer {
+            z-index: 4;
+            opacity: 0.22;
+            mix-blend-mode: soft-light;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+        }
+
+        .page-shell {
+            position: relative;
+            z-index: 8;
+        }
+
+        .loader {
+            position: fixed;
+            inset: 0;
+            z-index: 120;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at 50% 50%, rgba(98, 242, 255, 0.16), transparent 36%),
+                radial-gradient(circle at 30% 20%, rgba(255, 138, 61, 0.14), transparent 28%),
+                linear-gradient(180deg, rgba(2, 7, 16, 0.98), rgba(3, 8, 20, 0.99));
+        }
+
+        .loader-panel {
+            width: min(540px, 100%);
+            padding: 28px;
+            border-radius: 28px;
+            border: 1px solid rgba(141, 203, 255, 0.22);
+            background: rgba(5, 15, 28, 0.76);
+            box-shadow: var(--shadow-main);
+            backdrop-filter: blur(24px);
+        }
+
+        .loader-kicker,
+        .eyebrow,
+        .panel-kicker {
+            margin: 0 0 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.34em;
+            font-size: 0.72rem;
+            color: var(--glow-gold);
+        }
+
+        .loader-title {
+            margin: 0 0 10px;
+            font-family: "Orbitron", sans-serif;
+            font-size: clamp(2rem, 5vw, 3.3rem);
+            line-height: 0.96;
+            letter-spacing: 0.04em;
+        }
+
+        .loader-copy {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.65;
+        }
+
+        .loader-bar {
+            position: relative;
+            margin-top: 24px;
+            height: 12px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(237, 248, 255, 0.08);
+            border: 1px solid rgba(141, 203, 255, 0.18);
+        }
+
+        .loader-bar span {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--glow-cyan), var(--glow-orange), var(--glow-gold));
+            box-shadow: 0 0 18px rgba(98, 242, 255, 0.45);
+        }
+
+        .loader-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            margin-top: 16px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .cursor-dot,
+        .cursor-ring {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 90;
+            pointer-events: none;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 180ms ease;
+            mix-blend-mode: screen;
+        }
+
+        .cursor-dot {
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--glow-cyan) 72%, rgba(98, 242, 255, 0) 100%);
+            box-shadow: 0 0 22px rgba(98, 242, 255, 0.65);
+        }
+
+        .cursor-ring {
+            width: 46px;
+            height: 46px;
+            border: 1px solid rgba(98, 242, 255, 0.55);
+            box-shadow: 0 0 28px rgba(98, 242, 255, 0.18), inset 0 0 20px rgba(98, 242, 255, 0.1);
+            backdrop-filter: blur(4px);
+        }
+
+        .cursor-active .cursor-dot,
+        .cursor-active .cursor-ring {
+            opacity: 1;
+        }
+
+        .click-ring {
+            position: fixed;
+            width: 18px;
+            height: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 80;
+            transform: translate(-50%, -50%);
+            animation: ripple 760ms ease-out forwards;
+        }
+
+        .topbar {
+            position: fixed;
+            top: 18px;
+            left: 50%;
+            z-index: 30;
+            transform: translateX(-50%);
+            width: min(1180px, calc(100% - 26px));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 18px;
+            border-radius: 22px;
+            border: 1px solid rgba(141, 203, 255, 0.18);
+            background: rgba(4, 13, 26, 0.58);
+            box-shadow: 0 22px 50px rgba(0, 0, 0, 0.22);
+            backdrop-filter: blur(22px);
+        }
+
+        .brand-lockup {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .brand-title {
+            font-family: "Orbitron", sans-serif;
+            font-size: 0.96rem;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+        }
+
+        .brand-subtitle {
+            color: var(--muted);
+            font-size: 0.82rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .topbar-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .pill-button,
+        .hero-button,
+        .ghost-button,
+        .submit-button {
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+            border-radius: 999px;
+            border: 1px solid rgba(141, 203, 255, 0.24);
+            background: rgba(255, 255, 255, 0.04);
+            transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+        }
+
+        .pill-button:hover,
+        .hero-button:hover,
+        .ghost-button:hover,
+        .submit-button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(98, 242, 255, 0.46);
+            box-shadow: 0 0 24px rgba(98, 242, 255, 0.14);
+        }
+
+        .pill-button {
+            min-height: 44px;
+            padding: 0 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pill-button[data-active="true"] {
+            background: linear-gradient(135deg, rgba(98, 242, 255, 0.18), rgba(255, 138, 61, 0.12));
+            border-color: rgba(98, 242, 255, 0.42);
+        }
+
+        .sound-bars {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 16px;
+        }
+
+        .sound-bar {
+            width: 3px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, var(--glow-cyan), var(--glow-orange));
+            animation: bars 900ms ease-in-out infinite;
+            animation-play-state: paused;
+        }
+
+        .sound-bar:nth-child(1) {
+            height: 7px;
+            animation-delay: 0ms;
+        }
+
+        .sound-bar:nth-child(2) {
+            height: 14px;
+            animation-delay: 120ms;
+        }
+
+        .sound-bar:nth-child(3) {
+            height: 10px;
+            animation-delay: 240ms;
+        }
+
+        .sound-bar:nth-child(4) {
+            height: 15px;
+            animation-delay: 360ms;
+        }
+
+        .page-shell main {
+            position: relative;
+        }
+
+        .section {
+            width: min(1200px, calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        .hero {
+            min-height: 120svh;
+            display: grid;
+            grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+            gap: 28px;
+            align-items: center;
+            padding-top: 118px;
+            padding-bottom: 72px;
+        }
+
+        .hero-copy {
+            position: relative;
+            max-width: 720px;
+        }
+
+        .hero-title {
+            margin: 0;
+            font-family: "Orbitron", sans-serif;
+            font-size: clamp(3.3rem, 8.8vw, 7.1rem);
+            line-height: 0.92;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .hero-line {
+            display: block;
+            text-shadow: 0 0 34px rgba(98, 242, 255, 0.08);
+        }
+
+        .hero-line--accent {
+            background: linear-gradient(90deg, var(--glow-cyan), #e4fff8 42%, var(--glow-orange));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero-copy p {
+            margin: 24px 0 0;
+            max-width: 620px;
+            color: var(--muted);
+            font-size: clamp(1rem, 2vw, 1.18rem);
+            line-height: 1.78;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+            margin-top: 32px;
+        }
+
+        .hero-button,
+        .ghost-button,
+        .submit-button {
+            min-height: 56px;
+            padding: 0 22px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .hero-button,
+        .submit-button {
+            color: #03101c;
+            background: linear-gradient(135deg, #dffcff 0%, var(--glow-cyan) 40%, var(--glow-orange) 100%);
+            box-shadow: 0 18px 40px rgba(98, 242, 255, 0.2);
+        }
+
+        .hero-button span,
+        .ghost-button span,
+        .submit-button span,
+        .pill-button span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .ghost-button {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .signal-strip {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 30px;
+        }
+
+        .signal-card,
+        .stat-card {
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(141, 203, 255, 0.16);
+            background: rgba(10, 22, 40, 0.42);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+            backdrop-filter: blur(14px);
+        }
+
+        .signal-card {
+            padding: 16px 18px;
+        }
+
+        .signal-card small,
+        .stat-card small {
+            display: block;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-size: 0.68rem;
+            margin-bottom: 6px;
+        }
+
+        .signal-card strong {
+            font-size: 0.95rem;
+            line-height: 1.45;
+        }
+
+        .hero-visual {
+            position: relative;
+            min-height: 610px;
+        }
+
+        .hero-visual .panel-depth,
+        .panel-depth {
+            height: 100%;
+        }
+
+        .interactive-panel {
+            position: relative;
+        }
+
+        .interactive-panel .panel-depth {
+            transform-style: preserve-3d;
+            transition: transform 200ms ease;
+        }
+
+        .glass-panel {
+            position: relative;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(141, 203, 255, 0.18);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+                var(--panel);
+            box-shadow: var(--shadow-main);
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+        }
+
+        .glass-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(98, 242, 255, 0.14), transparent 34%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 48%);
+            pointer-events: none;
+        }
+
+        .hero-visual-card {
+            position: absolute;
+            inset: 24px;
+            padding: 22px;
+        }
+
+        .visual-grid {
+            position: absolute;
+            inset: 18px;
+            border-radius: calc(var(--radius-lg) - 10px);
+            background:
+                linear-gradient(rgba(98, 242, 255, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(98, 242, 255, 0.06) 1px, transparent 1px);
+            background-size: 26px 26px;
+            mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0.35) 72%, transparent 100%);
+            opacity: 0.72;
+        }
+
+        .visual-rings,
+        .visual-core {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+        }
+
+        .orbit-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(98, 242, 255, 0.16);
+            box-shadow: 0 0 24px rgba(98, 242, 255, 0.08), inset 0 0 16px rgba(255, 255, 255, 0.03);
+        }
+
+        .orbit-ring--1 {
+            width: 68%;
+            aspect-ratio: 1;
+        }
+
+        .orbit-ring--2 {
+            width: 84%;
+            aspect-ratio: 1;
+            border-style: dashed;
+            animation: spin 34s linear infinite;
+        }
+
+        .orbit-ring--3 {
+            width: 50%;
+            aspect-ratio: 1;
+            border-color: rgba(255, 138, 61, 0.18);
+            animation: spinReverse 22s linear infinite;
+        }
+
+        .visual-core-badge {
+            position: relative;
+            display: grid;
+            gap: 8px;
+            place-items: center;
+            padding: 26px 28px;
+            border-radius: 24px;
+            background: rgba(5, 14, 26, 0.46);
+            border: 1px solid rgba(141, 203, 255, 0.18);
+            backdrop-filter: blur(12px);
+            text-align: center;
+            transform: translateZ(42px);
+        }
+
+        .visual-core-badge small {
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.28em;
+            font-size: 0.68rem;
+        }
+
+        .visual-core-badge strong {
+            font-family: "Orbitron", sans-serif;
+            font-size: clamp(1.6rem, 3vw, 2.4rem);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .floating-tag {
+            position: absolute;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(141, 203, 255, 0.18);
+            background: rgba(4, 13, 24, 0.64);
+            color: var(--text);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.18);
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            backdrop-filter: blur(12px);
+            animation: bob 8s ease-in-out infinite;
+        }
+
+        .floating-tag--top {
+            top: 18px;
+            right: 22px;
+            animation-delay: -1s;
+        }
+
+        .floating-tag--mid {
+            top: 48%;
+            left: 18px;
+            animation-delay: -3.2s;
+        }
+
+        .floating-tag--bottom {
+            right: 28px;
+            bottom: 20px;
+            animation-delay: -5.4s;
+        }
+
+        .scroll-cue {
+            position: absolute;
+            left: 0;
+            bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            font-size: 0.72rem;
+        }
+
+        .scroll-cue-track {
+            position: relative;
+            width: 1px;
+            height: 54px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .scroll-cue-line {
+            position: absolute;
+            inset: -100% 0 auto;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, var(--glow-cyan), transparent);
+        }
+
+        .console-section,
+        .vault-section {
+            padding-bottom: 96px;
+        }
+
+        .panel-grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 24px;
+        }
+
+        .form-shell {
+            grid-column: span 7;
+            min-height: 100%;
+        }
+
+        .reactor-shell {
+            grid-column: span 5;
+            min-height: 100%;
+        }
+
+        .panel-pad {
+            position: relative;
+            z-index: 1;
+            padding: 26px;
+        }
+
+        .panel-pad h2,
+        .section-head h2 {
+            margin: 0;
+            font-family: "Orbitron", sans-serif;
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            line-height: 1.04;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .panel-pad p,
+        .section-head p {
+            color: var(--muted);
+            line-height: 1.7;
+            margin: 14px 0 0;
+        }
+
+        form {
+            display: grid;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .field {
+            display: grid;
+            gap: 9px;
+        }
+
+        .field span {
+            font-size: 0.86rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #d5f5ff;
+        }
+
+        .field input {
+            width: 100%;
+            min-height: 62px;
+            padding: 0 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(141, 203, 255, 0.16);
+            background: rgba(6, 16, 28, 0.76);
+            color: var(--text);
+            transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background 180ms ease;
+        }
+
+        .field input::placeholder {
+            color: rgba(237, 248, 255, 0.34);
+        }
+
+        .field input:hover {
+            border-color: rgba(141, 203, 255, 0.32);
+        }
+
+        .field input:focus {
+            outline: none;
+            border-color: rgba(98, 242, 255, 0.58);
+            box-shadow: 0 0 0 5px rgba(98, 242, 255, 0.12), 0 14px 34px rgba(0, 0, 0, 0.22);
+            background: rgba(7, 19, 34, 0.96);
+            transform: translateY(-1px);
+        }
+
+        .form-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 14px;
+            margin-top: 8px;
+        }
+
+        .submit-button {
+            min-width: 220px;
+            justify-content: center;
+        }
+
+        .submit-button[disabled] {
+            cursor: progress;
+            opacity: 0.7;
+        }
+
+        .form-status {
+            min-height: 24px;
+            color: var(--muted);
+            font-size: 0.96rem;
+        }
+
+        .form-status[data-tone="success"] {
+            color: var(--success);
+        }
+
+        .form-status[data-tone="error"] {
+            color: var(--danger);
+        }
+
+        .form-status[data-tone="loading"] {
+            color: var(--glow-gold);
+        }
+
+        .reactor-copy {
+            max-width: 520px;
+        }
+
+        .physics-arena {
+            position: relative;
+            height: 420px;
+            margin-top: 24px;
+            overflow: hidden;
+            border-radius: 24px;
+            border: 1px solid rgba(141, 203, 255, 0.14);
+            background:
+                radial-gradient(circle at 50% 50%, rgba(98, 242, 255, 0.06), transparent 48%),
+                linear-gradient(180deg, rgba(2, 10, 18, 0.86), rgba(3, 12, 22, 0.96));
+        }
+
+        .physics-arena::before,
+        .physics-arena::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .physics-arena::before {
+            background:
+                linear-gradient(rgba(98, 242, 255, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(98, 242, 255, 0.06) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.6;
+        }
+
+        .physics-arena::after {
+            background: radial-gradient(circle at 50% 50%, transparent 38%, rgba(0, 0, 0, 0.4) 100%);
+        }
+
+        .physics-node {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: grid;
+            place-items: center;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(141, 203, 255, 0.18);
+            background:
+                radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.32), transparent 32%),
+                linear-gradient(135deg, rgba(98, 242, 255, 0.18), rgba(255, 138, 61, 0.18));
+            color: #effcff;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-size: 0.72rem;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+            backdrop-filter: blur(12px);
+            user-select: none;
+            will-change: transform;
+        }
+
+        .reactor-footnote {
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .section-head {
+            max-width: 780px;
+            margin-bottom: 24px;
+        }
+
+        .stats-strip {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            padding: 22px;
+        }
+
+        .stat-card strong {
+            display: block;
+            font-family: "Orbitron", sans-serif;
+            font-size: clamp(2.1rem, 5vw, 3.2rem);
+            line-height: 1;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .stat-card p {
+            margin: 10px 0 0;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .table-shell .panel-pad {
+            padding-bottom: 18px;
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 18px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .table-head p {
+            margin: 10px 0 0;
+            color: var(--muted);
+        }
+
+        .table-wrap {
+            overflow: auto;
+            border-radius: 20px;
+            border: 1px solid rgba(141, 203, 255, 0.1);
+            background: rgba(4, 12, 22, 0.48);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 620px;
+        }
+
+        thead th {
+            padding: 18px 20px;
+            text-align: left;
+            font-size: 0.8rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #cceeff;
+            background: rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid rgba(141, 203, 255, 0.14);
+        }
+
+        tbody td {
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(141, 203, 255, 0.08);
+            color: #edf8ff;
+        }
+
+        tbody tr {
+            transition: background 180ms ease, transform 180ms ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(98, 242, 255, 0.06);
+        }
+
+        tbody tr.row-new {
+            animation: flashRow 1.4s ease-out;
+        }
+
+        .empty-row td,
+        .error-row td {
+            color: var(--muted);
+            text-align: center;
+            padding: 28px 20px;
+        }
+
+        .error-row td {
+            color: var(--danger);
+        }
+
+        .vault-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .edit-person-button,
+        .delete-person-button {
+            min-height: 38px;
+            padding: 0 15px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+        }
+
+        .edit-person-button {
+            border: 1px solid rgba(98, 242, 255, 0.34);
+            color: #dffcff;
+            background: rgba(98, 242, 255, 0.08);
+        }
+
+        .edit-person-button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(98, 242, 255, 0.7);
+            background: rgba(98, 242, 255, 0.16);
+        }
+
+        .delete-person-button {
+            border: 1px solid rgba(255, 92, 127, 0.36);
+            color: #ffdbe3;
+            background: rgba(255, 92, 127, 0.09);
+        }
+
+        .delete-person-button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 92, 127, 0.72);
+            background: rgba(255, 92, 127, 0.18);
+        }
+
+        .edit-person-button:disabled,
+        .delete-person-button:disabled {
+            cursor: progress;
+            opacity: 0.5;
+        }
+
+        .edit-person-dialog {
+            width: min(560px, calc(100% - 28px));
+            padding: 0;
+            overflow: hidden;
+            border: 1px solid rgba(98, 242, 255, 0.3);
+            border-radius: 28px;
+            color: var(--text);
+            background: rgba(5, 15, 27, 0.96);
+            box-shadow: 0 36px 100px rgba(0, 0, 0, 0.74), 0 0 64px rgba(98, 242, 255, 0.13);
+            backdrop-filter: blur(24px);
+        }
+
+        .edit-person-dialog::backdrop {
+            background: rgba(1, 5, 12, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .edit-dialog-form {
+            display: grid;
+            gap: 18px;
+            padding: 28px;
+        }
+
+        .edit-dialog-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+        }
+
+        .edit-dialog-head h2 {
+            margin: 4px 0 0;
+            font-size: clamp(1.7rem, 5vw, 2.6rem);
+        }
+
+        .edit-dialog-close {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 auto;
+            border: 1px solid rgba(141, 203, 255, 0.22);
+            border-radius: 50%;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+            font-size: 1.3rem;
+        }
+
+        .edit-dialog-fields {
+            display: grid;
+            gap: 14px;
+        }
+
+        .edit-dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .footer-note {
+            width: min(1200px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 10px 0 48px;
+            color: rgba(198, 220, 236, 0.7);
+            font-size: 0.84rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+        }
+
+        body.motion-ready .reveal {
+            opacity: 0;
+            transform: translateY(48px);
+        }
+
+        [data-magnetic] {
+            transform-origin: center;
+        }
+
+        .topbar-glint,
+        .button-glint {
+            position: absolute;
+            inset: -120%;
+            background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.22) 48%, transparent 58%);
+            transform: rotate(12deg);
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .glass-panel:hover .topbar-glint,
+        .pill-button:hover .button-glint,
+        .hero-button:hover .button-glint,
+        .ghost-button:hover .button-glint,
+        .submit-button:hover .button-glint {
+            opacity: 1;
+            animation: sheen 840ms ease forwards;
+        }
+
+        @keyframes ripple {
+            0% {
+                opacity: 0.72;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(8);
+            }
+        }
+
+        @keyframes bars {
+            0%,
+            100% {
+                transform: scaleY(0.45);
+                opacity: 0.66;
+            }
+
+            50% {
+                transform: scaleY(1.15);
+                opacity: 1;
+            }
+        }
+
+        @keyframes bob {
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spinReverse {
+            from {
+                transform: rotate(360deg);
+            }
+
+            to {
+                transform: rotate(0deg);
+            }
+        }
+
+        @keyframes sheen {
+            0% {
+                transform: translateX(-50%) rotate(12deg);
+            }
+
+            100% {
+                transform: translateX(50%) rotate(12deg);
+            }
+        }
+
+        @keyframes flashRow {
+            0% {
+                background: rgba(98, 242, 255, 0.22);
+            }
+
+            100% {
+                background: transparent;
+            }
+        }
+
+        @media (max-width: 1080px) {
+            .hero {
+                grid-template-columns: 1fr;
+                gap: 22px;
+                min-height: auto;
+                padding-bottom: 40px;
+            }
+
+            .hero-visual {
+                min-height: 480px;
+            }
+
+            .form-shell,
+            .reactor-shell {
+                grid-column: span 12;
+            }
+
+            .stats-strip,
+            .signal-strip {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .topbar-controls {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .hero {
+                padding-top: 150px;
+            }
+
+            .hero-actions,
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .hero-button,
+            .ghost-button,
+            .submit-button {
+                width: 100%;
+            }
+
+            .hero-visual {
+                min-height: 420px;
+            }
+
+            .hero-visual-card {
+                inset: 14px;
+                padding: 18px;
+            }
+
+            .visual-core-badge {
+                padding: 20px;
+            }
+
+            .floating-tag--mid {
+                left: 10px;
+            }
+
+            .panel-pad {
+                padding: 20px;
+            }
+
+            .physics-arena {
+                height: 320px;
+            }
+
+            .scroll-cue {
+                position: static;
+                margin-top: 26px;
+            }
+        }
+
+        @media (pointer: coarse) {
+            .cursor-dot,
+            .cursor-ring {
+                display: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+
+            #webgl-canvas,
+            #particles-layer {
+                opacity: 0.36;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loader" id="loader">
+        <div class="loader-panel">
+            <p class="loader-kicker">Initializing Experience Stack</p>
+            <h1 class="loader-title">Person Control Nexus</h1>
+            <p class="loader-copy">Spinning up particles, 3D geometry, magnetic UI, live data sync and a ridiculous
+                amount of glow.</p>
+            <div class="loader-bar" aria-hidden="true">
+                <span id="loader-bar-fill"></span>
+            </div>
+            <div class="loader-meta">
+                <span id="loader-status">Booting interface kernel</span>
+                <strong id="loader-percent">0%</strong>
+            </div>
+        </div>
+    </div>
+
+    <div id="particles-layer" aria-hidden="true"></div>
+    <canvas id="webgl-canvas" aria-hidden="true"></canvas>
+    <div class="noise-layer" aria-hidden="true"></div>
+
+    <div class="cursor-dot" aria-hidden="true"></div>
+    <div class="cursor-ring" aria-hidden="true"></div>
+
+    <div class="page-shell">
+        <header class="topbar">
+            <div class="brand-lockup">
+                <strong class="brand-title">Person Control Nexus</strong>
+                <span class="brand-subtitle">Live `/people` sync • Physics chamber • 3D signal core • background
+                    audio</span>
+            </div>
+            <div class="topbar-controls">
+                <a class="pill-button" href="/doom" data-magnetic aria-label="Open the DOOM game">
+                    <span class="button-glint" aria-hidden="true"></span>
+                    <span>Enter DOOM</span>
+                </a>
+                <button class="pill-button" id="sound-toggle" type="button" data-active="false" data-magnetic>
+                    <span class="button-glint" aria-hidden="true"></span>
+                    <span class="sound-bars" aria-hidden="true">
+                        <i class="sound-bar"></i>
+                        <i class="sound-bar"></i>
+                        <i class="sound-bar"></i>
+                        <i class="sound-bar"></i>
+                    </span>
+                    <span id="sound-label">Tap For Sound</span>
+                </button>
+                <button class="pill-button" id="hyper-toggle" type="button" data-active="false" data-magnetic>
+                    <span class="button-glint" aria-hidden="true"></span>
+                    <span>Hyperdrive</span>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <section class="section hero">
+                <div class="hero-copy">
+                    <p class="eyebrow">High Voltage Interface Layer</p>
+                    <h1 class="hero-title">
+                        <span class="hero-line">Push People</span>
+                        <span class="hero-line hero-line--accent">Into The Grid</span>
+                        <span class="hero-line">Without Mercy</span>
+                    </h1>
+                    <p>Noua bază rămâne vie: adaugi persoane, citești tot ce vine din `/people`, dar acum totul se
+                        întâmplă într-un lobby cinematic cu particule reactive, simulări fizice, 3D rendering, cursor
+                        custom, loader și sound engine ambiental.</p>
+
+                    <div class="hero-actions">
+                        <button class="hero-button" id="scroll-to-form" type="button" data-magnetic>
+                            <span class="button-glint" aria-hidden="true"></span>
+                            <span>Launch Add Flow</span>
+                        </button>
+                        <button class="ghost-button" id="refresh-hero" type="button" data-magnetic>
+                            <span class="button-glint" aria-hidden="true"></span>
+                            <span>Resync People Feed</span>
+                        </button>
+                    </div>
+
+                    <div class="signal-strip">
+                        <article class="signal-card">
+                            <small>Motion Stack</small>
+                            <strong>GSAP + ScrollTrigger + Lenis orchestration</strong>
+                        </article>
+                        <article class="signal-card">
+                            <small>Visual Stack</small>
+                            <strong>Three.js + tsParticles + custom spotlight layers</strong>
+                        </article>
+                        <article class="signal-card">
+                            <small>Physics Stack</small>
+                            <strong>Matter.js drives the chamber and pointer turbulence</strong>
+                        </article>
+                    </div>
+
+                    <div class="scroll-cue" aria-hidden="true">
+                        <div class="scroll-cue-track">
+                            <div class="scroll-cue-line"></div>
+                        </div>
+                        <span>Scroll deeper</span>
+                    </div>
+                </div>
+
+                <div class="hero-visual reveal">
+                    <article class="glass-panel hero-visual-card interactive-panel">
+                        <div class="panel-depth">
+                            <span class="topbar-glint" aria-hidden="true"></span>
+                            <div class="visual-grid" aria-hidden="true"></div>
+                            <div class="visual-rings" aria-hidden="true">
+                                <div class="orbit-ring orbit-ring--1"></div>
+                                <div class="orbit-ring orbit-ring--2"></div>
+                                <div class="orbit-ring orbit-ring--3"></div>
+                            </div>
+                            <div class="visual-core">
+                                <div class="visual-core-badge">
+                                    <small>Realtime Render Core</small>
+                                    <strong>3D Live</strong>
+                                </div>
+                            </div>
+                            <div class="floating-tag floating-tag--top">Cursor Reactive</div>
+                            <div class="floating-tag floating-tag--mid">Physics Orbit</div>
+                            <div class="floating-tag floating-tag--bottom">Audio Driven Mood</div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section console-section">
+                <div class="panel-grid">
+                    <article class="glass-panel form-shell reveal interactive-panel">
+                        <div class="panel-depth">
+                            <span class="topbar-glint" aria-hidden="true"></span>
+                            <div class="panel-pad" id="form-panel">
+                                <p class="panel-kicker">Input Console</p>
+                                <h2>Inject A New Person</h2>
+                                <p>Același flux de bază, doar că acum formularul intră într-un control room adevărat.
+                                    Submit-ul face sync live și actualizează tabela fără reload când JavaScript este
+                                    activ.</p>
+
+                                <form id="person-form" method="post" action="/people">
+                                    <label class="field">
+                                        <span>First Name</span>
+                                        <input type="text" name="first_name" id="first_name_id"
+                                            placeholder="Type a first name" autocomplete="given-name" required>
+                                    </label>
+
+                                    <label class="field">
+                                        <span>Last Name</span>
+                                        <input type="text" name="last_name" id="last_name_id"
+                                            placeholder="Type a last name" autocomplete="family-name" required>
+                                    </label>
+
+                                    <label class="field">
+                                        <span>Email</span>
+                                        <input type="email" name="email" id="email_id" placeholder="name@domain.com"
+                                            autocomplete="email" required>
+                                    </label>
+
+                                    <div class="form-actions">
+                                        <button class="submit-button" id="submit-button" type="submit" data-magnetic>
+                                            <span class="button-glint" aria-hidden="true"></span>
+                                            <span id="submit-label">Add Person To Vault</span>
+                                        </button>
+                                        <div class="form-status" id="form-status" aria-live="polite">System idle.
+                                            Awaiting a profile payload.</div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="glass-panel reactor-shell reveal interactive-panel">
+                        <div class="panel-depth">
+                            <span class="topbar-glint" aria-hidden="true"></span>
+                            <div class="panel-pad">
+                                <p class="panel-kicker">Physics Chamber</p>
+                                <h2>Particle Reactor</h2>
+                                <p class="reactor-copy">Mută mouse-ul prin cameră, trage modulele și lovește sistemul.
+                                    Matter.js ține totul în viață, iar mișcarea ta deformează orbitele.</p>
+                                <div class="physics-arena" id="physics-arena" aria-hidden="true"></div>
+                                <div class="reactor-footnote">Pointer turbulence enabled • drag nodes if you want
+                                    chaos</div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section vault-section">
+                <div class="section-head reveal">
+                    <p class="eyebrow">Live Data Vault</p>
+                    <h2>The People Feed Lands Here</h2>
+                    <p>Tabela inițială rămâne, doar că este promovată într-un vault neon. Datele sunt citite din
+                        `/people`, sortate descrescător după `id` dacă există, iar fiecare submit live reîmprospătează
+                        feed-ul.</p>
+                </div>
+
+                <div class="stats-strip">
+                    <article class="stat-card reveal">
+                        <small>Total Profiles</small>
+                        <strong id="total-count">0</strong>
+                        <p>Numărul total de intrări primite de la backend.</p>
+                    </article>
+                    <article class="stat-card reveal">
+                        <small>Email Domains</small>
+                        <strong id="domain-count">0</strong>
+                        <p>Domenii distincte detectate în fluxul actual.</p>
+                    </article>
+                    <article class="stat-card reveal">
+                        <small>Latest Signal</small>
+                        <strong id="latest-signal">NONE</strong>
+                        <p>Ultimul profil vizibil în grid după sincronizare.</p>
+                    </article>
+                </div>
+
+                <article class="glass-panel table-shell reveal">
+                    <div class="panel-pad">
+                        <div class="table-head">
+                            <div>
+                                <p class="panel-kicker">People Stream</p>
+                                <h2>Vault Table</h2>
+                                <p>Feed-ul trăiește în continuare pe același endpoint și rămâne editabil din această
+                                    singură pagină.</p>
+                            </div>
+                            <button class="ghost-button" id="refresh-people" type="button" data-magnetic>
+                                <span class="button-glint" aria-hidden="true"></span>
+                                <span>Refresh Table</span>
+                            </button>
+                        </div>
+                        <div class="table-wrap">
+                            <table id="people_id">
+                                <thead>
+                                    <tr>
+                                        <th>First Name</th>
+                                        <th>Last Name</th>
+                                        <th>Email</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="empty-row">
+                                        <td colspan="4">Booting people vault...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </article>
+            </section>
+        </main>
+
+        <dialog class="edit-person-dialog" id="edit-person-dialog">
+            <form class="edit-dialog-form" id="edit-person-form">
+                <div class="edit-dialog-head">
+                    <div>
+                        <p class="panel-kicker">Vault Mutation / PUT</p>
+                        <h2>Edit Person</h2>
+                    </div>
+                    <button class="edit-dialog-close" id="edit-dialog-close" type="button" aria-label="Close edit dialog">×</button>
+                </div>
+                <div class="edit-dialog-fields">
+                    <label class="field-shell">
+                        <span>First Name</span>
+                        <input id="edit-first-name" name="first_name" type="text" autocomplete="given-name" required>
+                    </label>
+                    <label class="field-shell">
+                        <span>Last Name</span>
+                        <input id="edit-last-name" name="last_name" type="text" autocomplete="family-name" required>
+                    </label>
+                    <label class="field-shell">
+                        <span>Email</span>
+                        <input id="edit-email" name="email" type="email" autocomplete="email" required>
+                    </label>
+                </div>
+                <div class="edit-dialog-actions">
+                    <button class="ghost-button" id="edit-cancel" type="button"><span>Cancel</span></button>
+                    <button class="submit-button" id="edit-save" type="submit"><span>Save Changes</span></button>
+                </div>
+            </form>
+        </dialog>
+
+        <div class="footer-note">Single file HTML • live fetch + submit • physics + particles + 3D + sound</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.3.23/dist/lenis.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@4.3.2/tsparticles.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from "three";
+        import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+        const endpoint = "/people";
+        const root = document.documentElement;
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        const loader = document.getElementById("loader");
+        const loaderFill = document.getElementById("loader-bar-fill");
+        const loaderStatus = document.getElementById("loader-status");
+        const loaderPercent = document.getElementById("loader-percent");
+        const cursorDot = document.querySelector(".cursor-dot");
+        const cursorRing = document.querySelector(".cursor-ring");
+        const form = document.getElementById("person-form");
+        const formStatus = document.getElementById("form-status");
+        const submitButton = document.getElementById("submit-button");
+        const submitLabel = document.getElementById("submit-label");
+        const tableBody = document.querySelector("#people_id tbody");
+        const totalCount = document.getElementById("total-count");
+        const domainCount = document.getElementById("domain-count");
+        const latestSignal = document.getElementById("latest-signal");
+        const refreshPeopleButton = document.getElementById("refresh-people");
+        const refreshHeroButton = document.getElementById("refresh-hero");
+        const scrollToFormButton = document.getElementById("scroll-to-form");
+        const formPanel = document.getElementById("form-panel");
+        const soundToggle = document.getElementById("sound-toggle");
+        const soundLabel = document.getElementById("sound-label");
+        const hyperToggle = document.getElementById("hyper-toggle");
+        const physicsArena = document.getElementById("physics-arena");
+        const editDialog = document.getElementById("edit-person-dialog");
+        const editForm = document.getElementById("edit-person-form");
+        const editFirstName = document.getElementById("edit-first-name");
+        const editLastName = document.getElementById("edit-last-name");
+        const editEmail = document.getElementById("edit-email");
+        const editSaveButton = document.getElementById("edit-save");
+        const editDialogClose = document.getElementById("edit-dialog-close");
+        const editCancel = document.getElementById("edit-cancel");
+
+        const appState = {
+            people: [],
+            lenis: null,
+            soundEnabled: false,
+            audioStarted: false,
+            hyperMode: false,
+            loaderCurrent: 0,
+            loaderTarget: 8,
+            loaderDone: false,
+            latestRowId: null,
+            editingPersonId: null
+        };
+
+        const pointer = {
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+            ringX: window.innerWidth / 2,
+            ringY: window.innerHeight / 2,
+            down: false
+        };
+
+        function setLoader(target, message) {
+            appState.loaderTarget = Math.max(appState.loaderTarget, target);
+            if (message) {
+                loaderStatus.textContent = message;
+            }
+        }
+
+        function tickLoader() {
+            appState.loaderCurrent += (appState.loaderTarget - appState.loaderCurrent) * 0.08 + 0.18;
+            if (appState.loaderCurrent > 100) {
+                appState.loaderCurrent = 100;
+            }
+
+            const rounded = Math.round(appState.loaderCurrent);
+            loaderFill.style.width = `${rounded}%`;
+            loaderPercent.textContent = `${rounded}%`;
+
+            if (!appState.loaderDone || appState.loaderCurrent < 99.6) {
+                requestAnimationFrame(tickLoader);
+            } else if (loader) {
+                if (window.gsap) {
+                    gsap.to(loader, {
+                        autoAlpha: 0,
+                        duration: 1,
+                        ease: "power3.inOut",
+                        onComplete: () => loader.remove()
+                    });
+                } else {
+                    loader.remove();
+                }
+            }
+        }
+
+        tickLoader();
+
+        function finishLoader() {
+            appState.loaderDone = true;
+            setLoader(100, "Reality distortion synchronized");
+        }
+
+        function wait(ms) {
+            return new Promise((resolve) => window.setTimeout(resolve, ms));
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        function sortPeople(list) {
+            return [...list].sort((left, right) => (Number(right.id) || 0) - (Number(left.id) || 0));
+        }
+
+        function setFormStatus(message, tone = "") {
+            formStatus.textContent = message;
+            if (tone) {
+                formStatus.dataset.tone = tone;
+            } else {
+                delete formStatus.dataset.tone;
+            }
+        }
+
+        function animateCounter(element, value) {
+            const nextValue = Number(value) || 0;
+            if (!window.gsap) {
+                element.textContent = String(nextValue);
+                return;
+            }
+
+            const holder = { value: Number(element.dataset.value || 0) };
+            gsap.to(holder, {
+                value: nextValue,
+                duration: 0.9,
+                ease: "power2.out",
+                onUpdate: () => {
+                    const current = Math.round(holder.value);
+                    element.textContent = String(current);
+                    element.dataset.value = String(current);
+                }
+            });
+        }
+
+        function updateStats(people) {
+            const domains = new Set(
+                people
+                    .map((person) => String(person.email || "").split("@")[1]?.toLowerCase())
+                    .filter(Boolean)
+            );
+
+            animateCounter(totalCount, people.length);
+            animateCounter(domainCount, domains.size);
+
+            if (!people.length) {
+                latestSignal.textContent = "NONE";
+                return;
+            }
+
+            const latest = people[0];
+            const label = latest.id
+                ? `#${latest.id}`
+                : `${String(latest.first_name || "").slice(0, 1)}${String(latest.last_name || "").slice(0, 1)}`.toUpperCase();
+            latestSignal.textContent = label || "LIVE";
+        }
+
+        function renderPeople(people, newPersonId = null) {
+            tableBody.innerHTML = "";
+
+            if (!people.length) {
+                tableBody.innerHTML = `
+                    <tr class="empty-row">
+                        <td colspan="4">No profiles detected yet. Launch one from the console.</td>
+                    </tr>
+                `;
+                updateStats(people);
+                return;
+            }
+
+            for (const person of people) {
+                const row = document.createElement("tr");
+                row.dataset.personId = String(person.id ?? "");
+                if (newPersonId && String(person.id ?? "") === String(newPersonId)) {
+                    row.classList.add("row-new");
+                }
+
+                const actionsDisabled = person.id == null ? "disabled" : "";
+                row.innerHTML = `
+                    <td>${escapeHtml(person.first_name || "")}</td>
+                    <td>${escapeHtml(person.last_name || "")}</td>
+                    <td>${escapeHtml(person.email || "")}</td>
+                    <td class="vault-actions">
+                        <button class="edit-person-button" type="button" data-edit-person ${actionsDisabled}>Edit</button>
+                        <button class="delete-person-button" type="button" data-delete-person ${actionsDisabled}>Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            }
+
+            updateStats(people);
+        }
+
+        async function fetchPeople(showStatus = false) {
+            if (showStatus) {
+                setFormStatus("Syncing people vault from /people ...", "loading");
+            }
+
+            try {
+                const response = await fetch(endpoint, {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const payload = await response.json();
+                appState.people = sortPeople(Array.isArray(payload) ? payload : []);
+                renderPeople(appState.people);
+                setLoader(82, "People feed synchronized");
+
+                if (showStatus) {
+                    setFormStatus("People feed synchronized.", "success");
+                }
+
+                return appState.people;
+            } catch (error) {
+                tableBody.innerHTML = `
+                    <tr class="error-row">
+                        <td colspan="4">Could not reach /people. Check that the backend is running on the same origin.</td>
+                    </tr>
+                `;
+                updateStats([]);
+
+                if (showStatus) {
+                    setFormStatus("Sync failed. Backend unreachable or not serving /people.", "error");
+                }
+
+                throw error;
+            }
+        }
+
+        function closeEditDialog() {
+            if (editDialog.open) {
+                editDialog.close();
+            }
+            appState.editingPersonId = null;
+            editForm.reset();
+        }
+
+        function openEditDialog(person) {
+            if (person.id == null) {
+                setFormStatus("This profile has no DynamoDB id and cannot be edited.", "error");
+                return;
+            }
+
+            appState.editingPersonId = String(person.id);
+            editFirstName.value = person.first_name || "";
+            editLastName.value = person.last_name || "";
+            editEmail.value = person.email || "";
+            editDialog.showModal();
+            editFirstName.focus();
+        }
+
+        async function handleEditSubmit(event) {
+            event.preventDefault();
+
+            if (!editForm.reportValidity() || appState.editingPersonId == null) {
+                return;
+            }
+
+            const personId = appState.editingPersonId;
+            editSaveButton.disabled = true;
+            setFormStatus("Updating profile in DynamoDB ...", "loading");
+
+            try {
+                const response = await fetch(`${endpoint}?${new URLSearchParams({ id: personId })}`, {
+                    method: "PUT",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        first_name: editFirstName.value.trim(),
+                        last_name: editLastName.value.trim(),
+                        email: editEmail.value.trim()
+                    })
+                });
+
+                if (!response.ok) {
+                    const payload = await response.json().catch(() => null);
+                    throw new Error(payload?.error || `HTTP ${response.status}`);
+                }
+
+                const updatedPerson = await response.json();
+                appState.people = appState.people.map((person) =>
+                    String(person.id ?? "") === personId ? updatedPerson : person
+                );
+                renderPeople(appState.people, personId);
+                closeEditDialog();
+                setFormStatus("Profile updated successfully in the vault.", "success");
+                flashSignal();
+            } catch (error) {
+                setFormStatus(`Edit failed: ${error.message}`, "error");
+            } finally {
+                editSaveButton.disabled = false;
+            }
+        }
+
+        function handleVaultEdit(event) {
+            const button = event.target.closest("[data-edit-person]");
+            if (!button) {
+                return;
+            }
+
+            const personId = button.closest("tr")?.dataset.personId;
+            const person = appState.people.find((item) => String(item.id ?? "") === personId);
+            if (!person) {
+                setFormStatus("Profile not found in the current vault snapshot. Refresh and try again.", "error");
+                return;
+            }
+
+            openEditDialog(person);
+        }
+
+        async function deletePerson(person, button) {
+            const personId = String(person.id ?? "");
+            if (!personId) {
+                setFormStatus("This profile has no DynamoDB id and cannot be deleted.", "error");
+                return;
+            }
+
+            const displayName = `${person.first_name || ""} ${person.last_name || ""}`.trim() || person.email || personId;
+            if (!window.confirm(`Delete ${displayName} permanently from the vault?`)) {
+                return;
+            }
+
+            button.disabled = true;
+            setFormStatus("Deleting profile from DynamoDB ...", "loading");
+
+            try {
+                const response = await fetch(`${endpoint}?${new URLSearchParams({ id: personId })}`, {
+                    method: "DELETE",
+                    headers: { "Accept": "application/json" }
+                });
+
+                if (!response.ok) {
+                    const payload = await response.json().catch(() => null);
+                    throw new Error(payload?.error || `HTTP ${response.status}`);
+                }
+
+                appState.people = appState.people.filter((item) => String(item.id ?? "") !== personId);
+                renderPeople(appState.people);
+                setFormStatus(`${displayName} was deleted from the vault.`, "success");
+                flashSignal();
+            } catch (error) {
+                button.disabled = false;
+                setFormStatus(`Delete failed: ${error.message}`, "error");
+            }
+        }
+
+        function handleVaultDelete(event) {
+            const button = event.target.closest("[data-delete-person]");
+            if (!button) {
+                return;
+            }
+
+            const personId = button.closest("tr")?.dataset.personId;
+            const person = appState.people.find((item) => String(item.id ?? "") === personId);
+            if (!person) {
+                setFormStatus("Profile not found in the current vault snapshot. Refresh and try again.", "error");
+                return;
+            }
+
+            deletePerson(person, button);
+        }
+
+        function createClickRing(clientX, clientY) {
+            const ring = document.createElement("span");
+            ring.className = "click-ring";
+            ring.style.left = `${clientX}px`;
+            ring.style.top = `${clientY}px`;
+            document.body.appendChild(ring);
+            window.setTimeout(() => ring.remove(), 780);
+        }
+
+        function initCursor() {
+            document.body.classList.add("cursor-active");
+
+            window.addEventListener("pointermove", (event) => {
+                pointer.x = event.clientX;
+                pointer.y = event.clientY;
+                root.style.setProperty("--mouse-x", `${event.clientX}px`);
+                root.style.setProperty("--mouse-y", `${event.clientY}px`);
+            });
+
+            window.addEventListener("pointerdown", (event) => {
+                pointer.down = true;
+                createClickRing(event.clientX, event.clientY);
+            });
+
+            window.addEventListener("pointerup", () => {
+                pointer.down = false;
+            });
+
+            function frame() {
+                pointer.ringX += (pointer.x - pointer.ringX) * 0.16;
+                pointer.ringY += (pointer.y - pointer.ringY) * 0.16;
+
+                const scale = pointer.down ? 0.82 : 1;
+                cursorDot.style.transform = `translate(${pointer.x}px, ${pointer.y}px) translate(-50%, -50%) scale(${pointer.down ? 0.8 : 1})`;
+                cursorRing.style.transform = `translate(${pointer.ringX}px, ${pointer.ringY}px) translate(-50%, -50%) scale(${scale})`;
+
+                requestAnimationFrame(frame);
+            }
+
+            frame();
+        }
+
+        function initPanels() {
+            const panels = document.querySelectorAll(".interactive-panel");
+
+            for (const panel of panels) {
+                const depth = panel.querySelector(".panel-depth");
+                if (!depth) {
+                    continue;
+                }
+
+                panel.addEventListener("pointermove", (event) => {
+                    const bounds = panel.getBoundingClientRect();
+                    const px = (event.clientX - bounds.left) / bounds.width;
+                    const py = (event.clientY - bounds.top) / bounds.height;
+                    const rotateY = (px - 0.5) * 12;
+                    const rotateX = (0.5 - py) * 10;
+                    depth.style.transform = `perspective(1400px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(0)`;
+                });
+
+                panel.addEventListener("pointerleave", () => {
+                    depth.style.transform = "perspective(1400px) rotateX(0deg) rotateY(0deg) translateZ(0)";
+                });
+            }
+        }
+
+        function initMagneticButtons() {
+            const magneticItems = document.querySelectorAll("[data-magnetic]");
+            magneticItems.forEach((item) => {
+                item.addEventListener("pointermove", (event) => {
+                    const bounds = item.getBoundingClientRect();
+                    const x = event.clientX - (bounds.left + bounds.width / 2);
+                    const y = event.clientY - (bounds.top + bounds.height / 2);
+                    item.style.transform = `translate(${x * 0.08}px, ${y * 0.08}px)`;
+                });
+
+                item.addEventListener("pointerleave", () => {
+                    item.style.transform = "translate(0px, 0px)";
+                });
+            });
+        }
+
+        function initLenis() {
+            if (!window.Lenis || prefersReducedMotion) {
+                return;
+            }
+
+            appState.lenis = new window.Lenis({
+                lerp: 0.08,
+                smoothWheel: true,
+                syncTouch: false
+            });
+
+            if (window.gsap && window.ScrollTrigger) {
+                appState.lenis.on("scroll", window.ScrollTrigger.update);
+                gsap.ticker.add((time) => {
+                    appState.lenis?.raf(time * 1000);
+                });
+                gsap.ticker.lagSmoothing(0);
+            } else {
+                const loop = (time) => {
+                    appState.lenis?.raf(time);
+                    requestAnimationFrame(loop);
+                };
+                requestAnimationFrame(loop);
+            }
+        }
+
+        async function initParticles() {
+            if (!window.tsParticles || !window.loadFull) {
+                return;
+            }
+
+            setLoader(20, "Deploying particle field");
+            await window.loadFull(window.tsParticles);
+            await window.tsParticles.load({
+                id: "particles-layer",
+                options: {
+                    fullScreen: {
+                        enable: false,
+                        zIndex: 0
+                    },
+                    background: {
+                        color: {
+                            value: "transparent"
+                        }
+                    },
+                    fpsLimit: 60,
+                    particles: {
+                        number: {
+                            value: prefersReducedMotion ? 28 : 78,
+                            density: {
+                                enable: true,
+                                area: 900
+                            }
+                        },
+                        color: {
+                            value: ["#62f2ff", "#ff8a3d", "#ffd166", "#ffffff"]
+                        },
+                        links: {
+                            enable: true,
+                            distance: 130,
+                            color: "#62f2ff",
+                            opacity: 0.12,
+                            width: 1
+                        },
+                        move: {
+                            enable: true,
+                            speed: prefersReducedMotion ? 0.3 : 1.2,
+                            outModes: {
+                                default: "bounce"
+                            }
+                        },
+                        opacity: {
+                            value: {
+                                min: 0.16,
+                                max: 0.5
+                            },
+                            animation: {
+                                enable: true,
+                                speed: 0.8
+                            }
+                        },
+                        size: {
+                            value: {
+                                min: 1,
+                                max: 4
+                            }
+                        }
+                    },
+                    interactivity: {
+                        events: {
+                            onHover: {
+                                enable: true,
+                                mode: ["grab", "bubble"]
+                            }
+                        },
+                        modes: {
+                            grab: {
+                                distance: 170,
+                                links: {
+                                    opacity: 0.26
+                                }
+                            },
+                            bubble: {
+                                distance: 180,
+                                duration: 1.6,
+                                opacity: 0.8,
+                                size: 7
+                            }
+                        }
+                    },
+                    detectRetina: true
+                }
+            });
+            setLoader(34, "Particle field online");
+        }
+
+        function initMotion() {
+            if (!window.gsap) {
+                return;
+            }
+
+            document.body.classList.add("motion-ready");
+
+            if (window.ScrollTrigger) {
+                gsap.registerPlugin(window.ScrollTrigger);
+            }
+
+            gsap.from(".topbar", {
+                y: -32,
+                opacity: 0,
+                duration: 1,
+                ease: "power3.out",
+                delay: 0.2
+            });
+
+            const introTimeline = gsap.timeline({
+                defaults: {
+                    ease: "power4.out"
+                }
+            });
+
+            introTimeline
+                .from(".eyebrow", { y: 30, opacity: 0, duration: 0.7 }, 0.12)
+                .from(".hero-line", { yPercent: 120, opacity: 0, stagger: 0.12, duration: 1 }, 0.18)
+                .from(".hero-copy p", { y: 28, opacity: 0, duration: 0.9 }, 0.42)
+                .from(".hero-actions .hero-button, .hero-actions .ghost-button", { y: 24, opacity: 0, stagger: 0.12, duration: 0.7 }, 0.52)
+                .from(".signal-card", { y: 30, opacity: 0, stagger: 0.1, duration: 0.8 }, 0.62)
+                .from(".hero-visual-card", { scale: 0.92, opacity: 0, duration: 1.1 }, 0.42);
+
+            gsap.to(".scroll-cue-line", {
+                yPercent: 180,
+                repeat: -1,
+                ease: "none",
+                duration: 1.5
+            });
+
+            gsap.utils.toArray(".reveal").forEach((element) => {
+                gsap.to(element, {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: "power3.out",
+                    scrollTrigger: window.ScrollTrigger ? {
+                        trigger: element,
+                        start: "top 82%"
+                    } : undefined
+                });
+            });
+
+            gsap.to(".hero-visual-card", {
+                y: -10,
+                repeat: -1,
+                yoyo: true,
+                duration: 3.2,
+                ease: "sine.inOut"
+            });
+        }
+
+        function scrollToElement(element) {
+            if (!element) {
+                return;
+            }
+
+            if (appState.lenis) {
+                appState.lenis.scrollTo(element, {
+                    offset: -110
+                });
+                return;
+            }
+
+            element.scrollIntoView({
+                behavior: prefersReducedMotion ? "auto" : "smooth",
+                block: "start"
+            });
+        }
+
+        function initEvents() {
+            tableBody.addEventListener("click", handleVaultEdit);
+            tableBody.addEventListener("click", handleVaultDelete);
+
+            refreshPeopleButton.addEventListener("click", () => {
+                fetchPeople(true).catch(() => null);
+            });
+
+            refreshHeroButton.addEventListener("click", () => {
+                fetchPeople(true).catch(() => null);
+                flashSignal();
+            });
+
+            scrollToFormButton.addEventListener("click", () => {
+                scrollToElement(formPanel);
+            });
+
+            hyperToggle.addEventListener("click", () => {
+                appState.hyperMode = !appState.hyperMode;
+                document.body.classList.toggle("hyper-mode", appState.hyperMode);
+                hyperToggle.dataset.active = String(appState.hyperMode);
+            });
+        }
+
+        function flashSignal() {
+            if (!window.gsap) {
+                return;
+            }
+
+            gsap.fromTo(
+                ".signal-card, .stat-card",
+                { boxShadow: "0 0 0 rgba(98, 242, 255, 0)" },
+                {
+                    boxShadow: "0 0 34px rgba(98, 242, 255, 0.18)",
+                    duration: 0.28,
+                    stagger: 0.06,
+                    yoyo: true,
+                    repeat: 1
+                }
+            );
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            if (!form.reportValidity()) {
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitLabel.textContent = "Injecting...";
+            setFormStatus("Sending payload to /people ...", "loading");
+
+            try {
+                const response = await fetch(form.action || endpoint, {
+                    method: "POST",
+                    body: new FormData(form)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const person = await response.json();
+                const updatedPeople = sortPeople([person, ...appState.people.filter((item) => String(item.id ?? "") !== String(person.id ?? ""))]);
+                appState.people = updatedPeople;
+                appState.latestRowId = person.id ?? `${person.first_name}-${person.last_name}-${Date.now()}`;
+                renderPeople(updatedPeople, person.id ?? null);
+                form.reset();
+                setFormStatus("Profile injected successfully. Vault synchronized.", "success");
+                submitLabel.textContent = "Add Person To Vault";
+                flashSignal();
+            } catch (error) {
+                setFormStatus("Live sync failed. Falling back to native form submission...", "error");
+                submitLabel.textContent = "Fallback Submit";
+                window.setTimeout(() => form.submit(), 260);
+                return;
+            } finally {
+                submitButton.disabled = false;
+                window.setTimeout(() => {
+                    submitLabel.textContent = "Add Person To Vault";
+                }, 450);
+            }
+        }
+
+        function initForm() {
+            form.addEventListener("submit", handleSubmit);
+            editForm.addEventListener("submit", handleEditSubmit);
+            editDialogClose.addEventListener("click", closeEditDialog);
+            editCancel.addEventListener("click", closeEditDialog);
+            editDialog.addEventListener("close", () => {
+                appState.editingPersonId = null;
+                editForm.reset();
+            });
+        }
+
+        function initPhysics() {
+            if (!window.Matter || !physicsArena) {
+                return;
+            }
+
+            const {
+                Engine,
+                Runner,
+                Bodies,
+                Body,
+                Composite,
+                Mouse,
+                MouseConstraint
+            } = window.Matter;
+
+            const engine = Engine.create({
+                gravity: { x: 0, y: 0 }
+            });
+            const runner = Runner.create();
+            Runner.run(runner, engine);
+
+            const nodes = [];
+            const tags = [
+                "API",
+                "INPUT",
+                "SYNC",
+                "NEON",
+                "GLB",
+                "MOTION",
+                "GLOW",
+                "DATA",
+                "WARP",
+                "VAULT",
+                "PULSE",
+                "SIGNAL"
+            ];
+
+            function createWalls(width, height) {
+                return [
+                    Bodies.rectangle(width / 2, -24, width + 120, 48, { isStatic: true }),
+                    Bodies.rectangle(width / 2, height + 24, width + 120, 48, { isStatic: true }),
+                    Bodies.rectangle(-24, height / 2, 48, height + 120, { isStatic: true }),
+                    Bodies.rectangle(width + 24, height / 2, 48, height + 120, { isStatic: true })
+                ];
+            }
+
+            function randomBetween(min, max) {
+                return min + Math.random() * (max - min);
+            }
+
+            const arenaBounds = physicsArena.getBoundingClientRect();
+            let walls = createWalls(arenaBounds.width, arenaBounds.height);
+            Composite.add(engine.world, walls);
+
+            tags.forEach((tag, index) => {
+                const radius = index % 3 === 0 ? 46 : 34;
+                const body = Bodies.circle(
+                    randomBetween(80, Math.max(100, arenaBounds.width - 80)),
+                    randomBetween(80, Math.max(100, arenaBounds.height - 80)),
+                    radius,
+                    {
+                        restitution: 0.96,
+                        frictionAir: 0.012,
+                        density: 0.0012
+                    }
+                );
+
+                const element = document.createElement("div");
+                element.className = "physics-node";
+                element.textContent = tag;
+                element.style.width = `${radius * 2}px`;
+                element.style.height = `${radius * 2}px`;
+                physicsArena.appendChild(element);
+
+                Body.setVelocity(body, {
+                    x: randomBetween(-4, 4),
+                    y: randomBetween(-4, 4)
+                });
+
+                nodes.push({ body, element, seed: Math.random() * Math.PI * 2 });
+                Composite.add(engine.world, body);
+            });
+
+            const mouse = Mouse.create(physicsArena);
+            const mouseConstraint = MouseConstraint.create(engine, {
+                mouse,
+                constraint: {
+                    stiffness: 0.08,
+                    render: { visible: false }
+                }
+            });
+            Composite.add(engine.world, mouseConstraint);
+
+            let localPointer = {
+                x: arenaBounds.width / 2,
+                y: arenaBounds.height / 2
+            };
+
+            physicsArena.addEventListener("pointermove", (event) => {
+                const bounds = physicsArena.getBoundingClientRect();
+                localPointer = {
+                    x: event.clientX - bounds.left,
+                    y: event.clientY - bounds.top
+                };
+            });
+
+            function resizeArena() {
+                const bounds = physicsArena.getBoundingClientRect();
+                walls.forEach((wall) => Composite.remove(engine.world, wall));
+                walls = createWalls(bounds.width, bounds.height);
+                Composite.add(engine.world, walls);
+            }
+
+            window.addEventListener("resize", resizeArena);
+
+            function renderPhysics() {
+                const time = performance.now() * 0.001;
+
+                nodes.forEach((node, index) => {
+                    const body = node.body;
+                    const dx = body.position.x - localPointer.x;
+                    const dy = body.position.y - localPointer.y;
+                    const distance = Math.hypot(dx, dy) || 1;
+
+                    const turbulence = 0.00006;
+                    Body.applyForce(body, body.position, {
+                        x: Math.cos(time * 0.8 + node.seed + index) * turbulence,
+                        y: Math.sin(time * 0.9 + node.seed + index) * turbulence
+                    });
+
+                    if (distance < 170) {
+                        const force = (170 - distance) / 170 * 0.00085;
+                        Body.applyForce(body, body.position, {
+                            x: (dx / distance) * force,
+                            y: (dy / distance) * force
+                        });
+                    }
+
+                    node.element.style.transform = `translate(${body.position.x}px, ${body.position.y}px) translate(-50%, -50%) rotate(${body.angle}rad)`;
+                });
+
+                requestAnimationFrame(renderPhysics);
+            }
+
+            renderPhysics();
+            setLoader(52, "Physics chamber stabilized");
+        }
+
+        function midiToFreq(note) {
+            return 440 * Math.pow(2, (note - 69) / 12);
+        }
+
+        function initAudio() {
+            let audioContext = null;
+            let masterGain = null;
+            let soundTimer = null;
+            let step = 0;
+            const notePattern = [45, 48, 52, 43, 50, 47];
+
+            function buildGraph() {
+                if (audioContext) {
+                    return;
+                }
+
+                const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextCtor) {
+                    return;
+                }
+
+                audioContext = new AudioContextCtor();
+                masterGain = audioContext.createGain();
+                masterGain.gain.value = 0.0001;
+
+                const filter = audioContext.createBiquadFilter();
+                filter.type = "lowpass";
+                filter.frequency.value = 1600;
+                filter.Q.value = 0.8;
+
+                masterGain.connect(filter);
+                filter.connect(audioContext.destination);
+            }
+
+            function playNote(frequency, when, duration, type, volume, panValue) {
+                if (!audioContext || !masterGain) {
+                    return;
+                }
+
+                const oscillator = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+                const pan = audioContext.createStereoPanner();
+
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, when);
+
+                filter.type = "lowpass";
+                filter.frequency.setValueAtTime(type === "sawtooth" ? 860 : 1800, when);
+
+                gain.gain.setValueAtTime(0.0001, when);
+                gain.gain.exponentialRampToValueAtTime(volume, when + duration * 0.22);
+                gain.gain.exponentialRampToValueAtTime(0.0001, when + duration);
+
+                pan.pan.setValueAtTime(panValue, when);
+
+                oscillator.connect(filter);
+                filter.connect(pan);
+                pan.connect(gain);
+                gain.connect(masterGain);
+
+                oscillator.start(when);
+                oscillator.stop(when + duration + 0.08);
+            }
+
+            function scheduleLoop() {
+                if (!appState.soundEnabled || !audioContext) {
+                    return;
+                }
+
+                const now = audioContext.currentTime + 0.05;
+                const rootNote = notePattern[step % notePattern.length];
+
+                playNote(midiToFreq(rootNote), now, 2.8, "sine", 0.016, -0.35);
+                playNote(midiToFreq(rootNote + 7), now + 0.08, 2.6, "triangle", 0.011, 0.35);
+                playNote(midiToFreq(rootNote + 12), now + 0.24, 1.4, "sawtooth", 0.0052, 0.08);
+                playNote(midiToFreq(rootNote + 19), now + 0.78, 0.38, "triangle", 0.0036, -0.1);
+                if (step % 2 === 0) {
+                    playNote(midiToFreq(rootNote + 24), now + 1.18, 0.28, "square", 0.0021, 0.42);
+                }
+
+                step += 1;
+                soundTimer = window.setTimeout(scheduleLoop, 1550);
+            }
+
+            async function enableSound() {
+                buildGraph();
+
+                if (!audioContext || !masterGain) {
+                    return;
+                }
+
+                if (audioContext.state === "suspended") {
+                    await audioContext.resume();
+                }
+
+                appState.soundEnabled = true;
+                appState.audioStarted = true;
+                document.body.classList.add("sound-on");
+                soundToggle.dataset.active = "true";
+                soundLabel.textContent = "Sound On";
+
+                masterGain.gain.cancelScheduledValues(audioContext.currentTime);
+                masterGain.gain.linearRampToValueAtTime(0.07, audioContext.currentTime + 0.5);
+
+                if (!soundTimer) {
+                    scheduleLoop();
+                }
+            }
+
+            function disableSound() {
+                if (!audioContext || !masterGain) {
+                    appState.soundEnabled = false;
+                    document.body.classList.remove("sound-on");
+                    soundToggle.dataset.active = "false";
+                    soundLabel.textContent = "Tap For Sound";
+                    return;
+                }
+
+                appState.soundEnabled = false;
+                document.body.classList.remove("sound-on");
+                soundToggle.dataset.active = "false";
+                soundLabel.textContent = "Tap For Sound";
+
+                masterGain.gain.cancelScheduledValues(audioContext.currentTime);
+                masterGain.gain.linearRampToValueAtTime(0.0001, audioContext.currentTime + 0.5);
+
+                if (soundTimer) {
+                    window.clearTimeout(soundTimer);
+                    soundTimer = null;
+                }
+            }
+
+            soundToggle.addEventListener("click", async () => {
+                if (appState.soundEnabled) {
+                    disableSound();
+                } else {
+                    await enableSound();
+                }
+            });
+
+            window.addEventListener("pointerdown", async () => {
+                if (!appState.audioStarted) {
+                    await enableSound();
+                }
+            }, { once: true });
+        }
+
+        function initThreeScene() {
+            return new Promise((resolve) => {
+                const canvas = document.getElementById("webgl-canvas");
+                if (!canvas) {
+                    resolve();
+                    return;
+                }
+
+                setLoader(36, "Rendering 3D relics");
+
+                const renderer = new THREE.WebGLRenderer({
+                    canvas,
+                    alpha: true,
+                    antialias: true,
+                    powerPreference: "high-performance"
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+                renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+                camera.position.set(0, 0.2, 7.4);
+
+                const ambient = new THREE.AmbientLight(0xffffff, 1.5);
+                scene.add(ambient);
+
+                const keyLight = new THREE.PointLight(0x62f2ff, 22, 30, 2);
+                keyLight.position.set(2.8, 2, 4.4);
+                scene.add(keyLight);
+
+                const rimLight = new THREE.PointLight(0xff8a3d, 18, 34, 2);
+                rimLight.position.set(-3.6, -1.6, 3.8);
+                scene.add(rimLight);
+
+                const group = new THREE.Group();
+                scene.add(group);
+
+                const torusMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x8cefff,
+                    emissive: 0x2fd4db,
+                    emissiveIntensity: 0.32,
+                    metalness: 0.82,
+                    roughness: 0.18
+                });
+                const torus = new THREE.Mesh(
+                    new THREE.TorusKnotGeometry(1.46, 0.28, 180, 28),
+                    torusMaterial
+                );
+                torus.position.set(1.55, -0.1, 0);
+                group.add(torus);
+
+                const shell = new THREE.Mesh(
+                    new THREE.IcosahedronGeometry(2.55, 1),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x62f2ff,
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.15
+                    })
+                );
+                group.add(shell);
+
+                const starCount = prefersReducedMotion ? 600 : 1800;
+                const positions = new Float32Array(starCount * 3);
+                const colors = new Float32Array(starCount * 3);
+                const palette = [
+                    new THREE.Color("#62f2ff"),
+                    new THREE.Color("#ff8a3d"),
+                    new THREE.Color("#ffd166"),
+                    new THREE.Color("#ffffff")
+                ];
+
+                for (let index = 0; index < starCount; index += 1) {
+                    const stride = index * 3;
+                    positions[stride] = (Math.random() - 0.5) * 24;
+                    positions[stride + 1] = (Math.random() - 0.5) * 18;
+                    positions[stride + 2] = (Math.random() - 0.5) * 22;
+
+                    const color = palette[index % palette.length];
+                    colors[stride] = color.r;
+                    colors[stride + 1] = color.g;
+                    colors[stride + 2] = color.b;
+                }
+
+                const particlesGeometry = new THREE.BufferGeometry();
+                particlesGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+                particlesGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+                const particles = new THREE.Points(
+                    particlesGeometry,
+                    new THREE.PointsMaterial({
+                        size: 0.038,
+                        vertexColors: true,
+                        transparent: true,
+                        opacity: 0.88,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    })
+                );
+                scene.add(particles);
+
+                const loadingManager = new THREE.LoadingManager();
+                loadingManager.onProgress = (_url, loaded, total) => {
+                    const ratio = total ? loaded / total : 1;
+                    setLoader(38 + ratio * 24, "Loading 3D asset");
+                };
+                loadingManager.onLoad = () => {
+                    setLoader(68, "3D asset locked");
+                };
+
+                const gltfLoader = new GLTFLoader(loadingManager);
+                let modelLoaded = false;
+                let helmet = null;
+
+                gltfLoader.load(
+                    "https://threejs.org/examples/models/gltf/DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
+                    (gltf) => {
+                        helmet = gltf.scene;
+                        helmet.scale.setScalar(2.25);
+                        helmet.position.set(-1.55, -0.2, 0);
+                        group.add(helmet);
+                        modelLoaded = true;
+                        resolve();
+                    },
+                    undefined,
+                    () => {
+                        setLoader(60, "3D asset fallback engaged");
+                        resolve();
+                    }
+                );
+
+                const clock = new THREE.Clock();
+
+                function animate() {
+                    const elapsed = clock.getElapsedTime();
+                    const nx = (pointer.x / window.innerWidth - 0.5) * 2;
+                    const ny = (pointer.y / window.innerHeight - 0.5) * 2;
+
+                    group.rotation.y += 0.0026;
+                    shell.rotation.x = elapsed * 0.12;
+                    shell.rotation.y = elapsed * 0.16;
+                    torus.rotation.x = elapsed * 0.24;
+                    torus.rotation.y = elapsed * 0.2;
+                    torus.position.y = Math.sin(elapsed * 1.2) * 0.18;
+
+                    particles.rotation.y = elapsed * 0.018;
+                    particles.rotation.x = elapsed * 0.011;
+
+                    if (helmet) {
+                        helmet.rotation.y = elapsed * 0.42;
+                        helmet.position.x = -1.45 + nx * 0.45;
+                        helmet.position.y = -0.15 + ny * -0.22;
+                    }
+
+                    camera.position.x += ((nx * 0.45) - camera.position.x) * 0.03;
+                    camera.position.y += ((-ny * 0.24) + 0.2 - camera.position.y) * 0.03;
+                    camera.lookAt(0, 0, 0);
+
+                    renderer.render(scene, camera);
+                    requestAnimationFrame(animate);
+                }
+
+                animate();
+
+                window.addEventListener("resize", () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+                });
+
+                window.setTimeout(() => {
+                    if (!modelLoaded) {
+                        resolve();
+                    }
+                }, 2600);
+            });
+        }
+
+        async function bootstrap() {
+            setLoader(12, "Warming DOM layers");
+
+            initCursor();
+            initPanels();
+            initMagneticButtons();
+            initLenis();
+            initMotion();
+            initEvents();
+            initForm();
+            initPhysics();
+            initAudio();
+
+            const minLoaderTime = wait(1800);
+            const particlesReady = initParticles().catch(() => null);
+            const sceneReady = initThreeScene().catch(() => null);
+            const peopleReady = fetchPeople().catch(() => null);
+
+            await Promise.all([particlesReady, sceneReady, peopleReady, document.fonts?.ready ?? Promise.resolve(), minLoaderTime]);
+            setLoader(94, "All systems online");
+            await wait(260);
+            finishLoader();
+            setFormStatus("System ready. Add a person or refresh the vault.", "success");
+        }
+
+        bootstrap();
+    </script>
+</body>
+
+</html>
