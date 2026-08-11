@@ -1,22 +1,18 @@
 from flask import Flask, request, send_from_directory
 from flask_restful import Api, Resource
-import boto3
 from botocore.exceptions import ClientError
 from decimal import Decimal
 import os
 import uuid
+from user import UserDAO
 
 counter = 0
 
 app = Flask('people')
 api = Api(app)
 
-aws_region = os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION') or 'ap-northeast-3'
-table_name = os.environ.get('DYNAMODB_TABLE') or 'users'
-
-dynamodb = boto3.resource('dynamodb', region_name=aws_region)
-table = dynamodb.Table(table_name)
-
+# Initialize UserDAO
+dao = UserDAO()
 
 def _payload():
     data = request.get_json(silent=True)
@@ -41,106 +37,77 @@ def _json_safe(value):
     return value
 
 
-def _get_person(person_id):
-    try:
-        response = table.get_item(Key={'id': person_id})
-    except ClientError as exc:
-        return None, {'error': str(exc)}, 500
-    return response.get('Item'), None, None
-
-
 class PeopleResource(Resource):
     def get(self):
         person_id = request.args.get('id')
         if person_id:
-            item, error_body, status = _get_person(person_id)
-            if error_body:
-                return error_body, status
-            if not item:
+            user = dao.get_user_by_id(person_id)
+            if not user:
                 return {'error': 'Not found'}, 404
-            return _json_safe(item)
+            return _json_safe(user)
 
-        try:
-            response = table.scan()
-            items = response.get('Items', [])
-            while 'LastEvaluatedKey' in response:
-                response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
-                items.extend(response.get('Items', []))
-        except ClientError as exc:
-            return {'error': str(exc)}, 500
+        email = request.args.get('email')
+        if email:
+            user = dao.get_user_by_email(email)
+            if not user:
+                return {'error': 'Not found'}, 404
+            return _json_safe(user)
 
-        return _json_safe(items)
+        building_id = request.args.get('building_id')
+        if building_id:
+            users = dao.get_users_by_building(building_id)
+            return _json_safe(users)
+
+        users = dao.get_all_users()
+        return _json_safe(users)
 
     def post(self):
         data = _payload()
-        item = _clean_item({
-            'id': str(uuid.uuid4()),
-            'first_name': data.get('first_name'),
-            'last_name': data.get('last_name'),
-            'email': data.get('email'),
-        })
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        email = data.get('email')
+        phone = data.get('phone')
+        dob = data.get('date_of_birth') or data.get('dob')
+        building_id = data.get('building_id')
+        apartment_number = data.get('apartment_number')
+        role = data.get('role', 'TENANT')
+        
+        # Merge other fields into preferences if needed, or pass directly
+        # Right now we let create_user handle defaults. 
+        user = dao.create_user(first_name, last_name, email, phone, dob, building_id, apartment_number, role)
+        
+        if not user:
+            return {'error': 'Failed to create user'}, 500
 
-        try:
-            table.put_item(Item=item)
-        except ClientError as exc:
-            return {'error': str(exc)}, 500
-
-        return _json_safe(item), 201
+        return _json_safe(user), 201
 
     def put(self):
         person_id = request.args.get('id')
         if not person_id:
             return {'error': 'Invalid or missing id'}, 400
 
-        existing, error_body, status = _get_person(person_id)
-        if error_body:
-            return error_body, status
-        if not existing:
-            return {'error': f'Missing person with id {person_id}'}, 404
-
         data = _payload()
-        updates = {}
-        for field in ('first_name', 'last_name', 'email'):
-            if field in data and data[field] is not None:
-                updates[field] = data[field]
+        
+        # update_user handles the dict merging for preferences
+        user = dao.update_user(person_id, data)
+        if not user:
+            return {'error': f'Missing person with id {person_id} or update failed'}, 404
 
-        if not updates:
-            return {'error': 'No fields to update'}, 400
-
-        expression_parts = []
-        expression_values = {}
-        for field, value in updates.items():
-            placeholder = f':{field}'
-            expression_parts.append(f'{field} = {placeholder}')
-            expression_values[placeholder] = value
-
-        try:
-            response = table.update_item(
-                Key={'id': person_id},
-                UpdateExpression='SET ' + ', '.join(expression_parts),
-                ExpressionAttributeValues=expression_values,
-                ReturnValues='ALL_NEW',
-            )
-        except ClientError as exc:
-            return {'error': str(exc)}, 500
-
-        return _json_safe(response.get('Attributes', existing))
+        return _json_safe(user)
 
     def delete(self):
         person_id = request.args.get('id')
         if not person_id:
             return {'error': 'Invalid or missing id'}, 400
-
-        existing, error_body, status = _get_person(person_id)
-        if error_body:
-            return error_body, status
+        
+        # Ensure user exists before deleting
+        existing = dao.get_user_by_id(person_id)
         if not existing:
             return {'error': f'Missing person with id {person_id}'}, 404
 
-        try:
-            table.delete_item(Key={'id': person_id})
-        except ClientError as exc:
-            return {'error': str(exc)}, 500
+        success = dao.delete_user(person_id)
+        if not success:
+            return {'error': 'Failed to delete user'}, 500
 
         return {'status': 'OK'}
 

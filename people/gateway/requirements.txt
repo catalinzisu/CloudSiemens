@@ -1,7 +1,3 @@
 flask
 flask_restful
-flask_sqlalchemy
-flask_requests
 requests
-mysqlclient
-boto3

@@ -1,0 +1,33 @@
+# Ignore git and database dumps
+
+.git
+db/
+
+# Python artifacts
+
+**pycache**/
+_.pyc
+_.pyo
+_.pyd
+_.sqlite3
+\*.db
+
+# Virtual envs
+
+venv/
+env/
+
+# Node modules (if any)
+
+node_modules/
+
+# Docker Desktop heavy data
+
+docker-desktop-data/
+
+# Ignore VS Code and OS files
+
+.vscode/
+\*.swp
+Thumbs.db
+ehthumbs.db
